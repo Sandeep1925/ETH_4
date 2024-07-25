@@ -21,6 +21,9 @@ contract DegenToken is ERC20, Ownable, ERC20Burnable {
     event TokensBurned(address indexed from, uint256 amount);
     event LoyaltyPointsUpdated(address indexed user, uint256 loyaltyPoints);
 
+    // Mapping to store item names and their respective token costs
+    mapping(string => uint256) public itemCosts;
+
     constructor() ERC20("Degen", "DGN") Ownable(msg.sender) {}
 
     function mint(address to, uint256 amount) external onlyOwner {
@@ -35,10 +38,12 @@ contract DegenToken is ERC20, Ownable, ERC20Burnable {
         emit TokensTransferred(msg.sender, recipient, amount);
     }
 
-    function redeemTokens(string memory item, uint256 amount) external {
-        require(balanceOf(msg.sender) >= amount, "Insufficient balance to redeem tokens.");
-        _burn(msg.sender, amount);
-        emit TokensRedeemed(msg.sender, item, amount);
+    function redeemTokens(string memory item) external {
+        uint256 itemCost = itemCosts[item];
+        require(itemCost > 0, "Item does not exist.");
+        require(balanceOf(msg.sender) >= itemCost, "Insufficient balance to redeem tokens for this item.");
+        _burn(msg.sender, itemCost);
+        emit TokensRedeemed(msg.sender, item, itemCost);
     }
 
     function checkBalance() external view returns (uint256) {
@@ -71,5 +76,10 @@ contract DegenToken is ERC20, Ownable, ERC20Burnable {
         loyalty.loyaltyPoints += newPoints;
         loyalty.lastUpdated = block.timestamp;
         emit LoyaltyPointsUpdated(user, loyalty.loyaltyPoints);
+    }
+
+    // Function to set item costs, only owner can set this
+    function setItemCost(string memory item, uint256 cost) external onlyOwner {
+        itemCosts[item] = cost;
     }
 }
