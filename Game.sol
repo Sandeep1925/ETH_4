@@ -20,9 +20,12 @@ contract DegenToken is ERC20, Ownable, ERC20Burnable {
     event TokensRedeemed(address indexed from, string item, uint256 amount);
     event TokensBurned(address indexed from, uint256 amount);
     event LoyaltyPointsUpdated(address indexed user, uint256 loyaltyPoints);
-
+    
     // Mapping to store item names and their respective token costs
     mapping(string => uint256) public itemCosts;
+
+    // New mapping to store redeemed items for each user
+    mapping(address => string[]) private redeemedItems;
 
     constructor() ERC20("Degen", "DGN") Ownable(msg.sender) {}
 
@@ -42,7 +45,13 @@ contract DegenToken is ERC20, Ownable, ERC20Burnable {
         uint256 itemCost = itemCosts[item];
         require(itemCost > 0, "Item does not exist.");
         require(balanceOf(msg.sender) >= itemCost, "Insufficient balance to redeem tokens for this item.");
+
+        // Burn the tokens for the cost of the item
         _burn(msg.sender, itemCost);
+
+        // Record the redeemed item in the redeemedItems mapping
+        redeemedItems[msg.sender].push(item);
+
         emit TokensRedeemed(msg.sender, item, itemCost);
     }
 
@@ -81,5 +90,10 @@ contract DegenToken is ERC20, Ownable, ERC20Burnable {
     // Function to set item costs, only owner can set this
     function setItemCost(string memory item, uint256 cost) external onlyOwner {
         itemCosts[item] = cost;
+    }
+
+    // New function to retrieve all redeemed items for a user
+    function getRedeemedItems() external view returns (string[] memory) {
+        return redeemedItems[msg.sender];
     }
 }
